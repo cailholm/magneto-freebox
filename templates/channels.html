@@ -1,0 +1,278 @@
+{% extends "base.html" %}
+
+{% block title %}Liste des chaînes TV{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1>Liste des chaînes TV</h1>
+    
+    {% if error %}
+        <div class="error">
+            ❌ Erreur: {{ error }}
+        </div>
+    {% endif %}
+    
+    <!-- Filtre textuel -->
+    <div class="filter-section">
+        <input type="text" id="channelFilter" placeholder="Filtrer les chaînes..." 
+               onkeyup="filterChannels()" class="filter-input">
+        <button onclick="clearFilter()" class="filter-clear">×</button>
+    </div>
+
+    <div class="card">
+        <div class="channels-grid" id="channelsGrid">
+            {% for channel in channels %}
+            <div class="channel-card {% if channel.selected %}channel-selected{% endif %}" 
+                 data-channel-id="{{ channel.id }}" 
+                 onclick="toggleSelectionFromCard('{{ channel.id }}')">
+                <div class="channel-header">
+                    <!-- Checkbox de sélection -->
+                    <input type="checkbox" id="select-{{ channel.id }}" 
+                           class="channel-checkbox" 
+                           {% if channel.selected %}checked{% endif %}
+                           onchange="toggleSelection('{{ channel.id }}')"
+                           onclick="event.stopPropagation()">
+                    
+                    {% if channel.logo %}
+                        <img src="{{ channel.logo }}" alt="{{ channel.name }}" class="channel-logo" onerror="this.style.display='none'">
+                    {% endif %}
+                    <h3>{{ channel.name }}</h3>
+                    {% if channel.short_name and channel.short_name != channel.name %}
+                        <div class="channel-short-name">({{ channel.short_name }})</div>
+                    {% endif %}
+                    {% if channel.favorite %}
+                        <div class="channel-favorite-badge">⭐</div>
+                    {% endif %}
+                </div>
+
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    
+    <div class="mt-2">
+        <a href="/" class="outline">Retour à l'accueil</a>
+    </div>
+</div>
+
+<style>
+.channels-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 10px;
+    margin-top: 15px;
+}
+
+.channel-card {
+    background: white;
+    border-radius: 6px;
+    padding: 10px;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+    transition: transform 0.2s;
+    font-size: 13px;
+}
+
+.channel-card:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    cursor: pointer;
+}
+
+.channel-card.channel-selected {
+    border: 2px solid #4CAF50;
+    background: #f8fff8;
+}
+
+.channel-card.channel-selected .channel-checkbox {
+    accent-color: #4CAF50;
+}
+
+.channel-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+    flex-wrap: wrap;
+}
+
+.channel-logo {
+    width: 32px;
+    height: 32px;
+    object-fit: contain;
+    border-radius: 3px;
+}
+
+.channel-number {
+    font-weight: bold;
+    color: #666;
+    font-size: 14px;
+}
+
+.channel-short-name {
+    font-size: 11px;
+    color: #666;
+    margin-top: 1px;
+}
+
+.channel-status {
+    font-size: 11px;
+    background: #f0f0f0;
+    padding: 1px 4px;
+    border-radius: 3px;
+    margin-left: auto;
+}
+
+.channel-program {
+    font-size: 14px;
+    color: #555;
+    border-top: 1px solid #eee;
+    padding-top: 10px;
+    margin-top: 10px;
+}
+
+.program-title {
+    font-weight: bold;
+    margin-bottom: 5px;
+    color: #333;
+}
+
+.program-subtitle {
+    font-style: italic;
+    color: #666;
+    margin-bottom: 5px;
+}
+
+.program-time {
+    font-size: 12px;
+    color: #888;
+    margin-bottom: 5px;
+}
+
+.program-description {
+    font-size: 13px;
+    line-height: 1.4;
+    color: #666;
+}
+.channel-favorite-badge {
+    color: #FFD700;
+    font-size: 14px;
+    margin-left: 4px;
+}
+
+.channel-card h3 {
+    font-size: 14px;
+    margin: 0;
+    flex: 1;
+    min-width: 100px;
+}
+
+.channel-checkbox {
+    width: 18px;
+    height: 18px;
+    margin-right: 8px;
+    cursor: pointer;
+}
+
+.filter-section {
+    margin: 15px 0;
+    display: flex;
+    gap: 8px;
+}
+
+.filter-input {
+    flex: 1;
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+.filter-clear {
+    padding: 8px 16px;
+    background: #f0f0f0;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.filter-clear:hover {
+    background: #e0e0e0;
+}
+
+</style>
+
+<script>
+// Fonction pour basculer la sélection d'une chaîne
+function toggleSelection(channelId) {
+    fetch(`/toggle_selection/${channelId}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (!data.success) {
+            console.error('Erreur lors de la mise à jour de la sélection:', data.error);
+        } else {
+            // Mettre à jour l'UI après la sélection
+            updateChannelUI(channelId, data.selected);
+        }
+    })
+    .catch(error => {
+        console.error('Erreur réseau:', error);
+    });
+}
+
+// Fonction pour basculer la sélection depuis la carte
+function toggleSelectionFromCard(channelId) {
+    // Basculer la checkbox
+    const checkbox = document.getElementById(`select-${channelId}`);
+    checkbox.checked = !checkbox.checked;
+    
+    // Mettre à jour visuellement la carte immédiatement
+    const card = document.querySelector(`[data-channel-id="${channelId}"]`);
+    card.classList.toggle('channel-selected');
+    
+    // Appeler la fonction de sélection
+    toggleSelection(channelId);
+}
+
+// Fonction pour mettre à jour l'UI après sélection
+function updateChannelUI(channelId, selectedChannels) {
+    const card = document.querySelector(`[data-channel-id="${channelId}"]`);
+    const checkbox = document.getElementById(`select-${channelId}`);
+    
+    if (selectedChannels.includes(channelId)) {
+        card.classList.add('channel-selected');
+        checkbox.checked = true;
+    } else {
+        card.classList.remove('channel-selected');
+        checkbox.checked = false;
+    }
+}
+
+// Fonction pour filtrer les chaînes par nom
+function filterChannels() {
+    const filter = document.getElementById('channelFilter').value.toLowerCase();
+    const channels = document.querySelectorAll('.channel-card');
+    
+    channels.forEach(channel => {
+        const name = channel.querySelector('h3').textContent.toLowerCase();
+        if (name.includes(filter)) {
+            channel.style.display = 'block';
+        } else {
+            channel.style.display = 'none';
+        }
+    });
+}
+
+// Fonction pour effacer le filtre
+function clearFilter() {
+    document.getElementById('channelFilter').value = '';
+    filterChannels();
+}
+</script>
+
+{% endblock %}

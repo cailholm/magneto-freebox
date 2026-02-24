@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ APP_NAME }}</title>
+    <link rel="stylesheet" href="https://unpkg.com/@picocss/pico@latest/css/pico.min.css">
+    <link href="/static/css/style.css" rel="stylesheet">
+</head>
+<body>
+    <header class="container">
+        <nav>
+            <ul>
+                <li><strong>{{ app_name }}</strong></li>
+            </ul>
+            <ul>
+                <li><a href="/" role="button">Accueil</a></li>
+                <li><a href="/channels" role="button">Chaînes</a></li>
+                <li><a href="/connection" role="button">Connexion</a></li>
+
+            </ul>
+        </nav>
+    </header>
+    
+    <main class="container">
+        {% block content %}{% endblock %}
+    </main>
+    
+    {% block scripts %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,3 @@
+Magneto Freebox est une application Web qui permet de récupérer la liste des prochains films diffusés sur une sélection de chaînes. Et ensuite de programmer leur enregistrement. Pour cela on utilise l'API Freebox dont la documentation se trouve ici : https://dev.freebox.fr/sdk/os/# et aussi ici pour la partie EPG : https://github.com/zelurker/freebox/issues/1
+
+Cette application est réalisée avec le framework Next.js

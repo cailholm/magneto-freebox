@@ -1,0 +1,212 @@
+{% extends "base.html" %}
+
+{% block content %}
+<!-- Notification container -->
+<div id="notification" class="notification" style="display: none;"></div>
+
+<article>
+    <h1>Connexion à la Freebox</h1>
+</article>
+
+<style>
+    .notification {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        padding: 10px 20px;
+        border-radius: 5px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        z-index: 1000;
+        display: none;
+    }
+    .notification.success {
+        background-color: #4CAF50;
+        color: white;
+    }
+    .notification.error {
+        background-color: #f44336;
+        color: white;
+    }
+    .notification.info {
+        background-color: #2196F3;
+        color: white;
+    }
+</style>
+
+<div class="card">
+    <div id="auth-section">
+        {% if credentials.auth_status == 'not_started' %}
+            <p>Pour connecter <strong>{{ app_name }}</strong> à votre Freebox, cliquez sur le bouton ci-dessous. Vous devrez ensuite approuver la demande directement sur l'écran de votre boîtier Freebox serveur.</p>
+            <button id="startAuthBtn" class="success" onclick="startAuthentication()">
+                Démarrer l'authentification
+            </button>
+        {% elif credentials.auth_status == 'waiting_approval' %}
+            <div class="warning">
+                ⏳ En attente d'approbation pour <strong>{{ app_name }}</strong>... <span id="countdown">30</span> secondes restantes
+            </div>
+            <p><strong>Action requise :</strong> Appuyez sur le bouton de votre Freebox pour approuver l'application.</p>
+            <p>Vérification automatique en cours...</p>
+        {% elif credentials.auth_status == 'authorized' %}
+            <div class="success">
+                ✅ Authentification approuvée pour <strong>{{ app_name }}</strong> !
+            </div>
+            <p>Création de la session en cours...</p>
+        {% elif credentials.auth_status == 'session_created' %}
+            <div class="success">
+                ✅ Connexion réussie pour <strong>{{ app_name }}</strong> !
+            </div>
+            <p>Session active depuis: {{ credentials.last_auth_attempt or "inconnu" }}</p>
+            <p>Vous êtes maintenant connecté à l'API Freebox et pouvez utiliser l'application.</p>
+            <div class="mt-2">
+                <a href="/" class="success">Accéder à l'accueil</a>
+                <button class="error" onclick="logout()" style="margin-left: 10px;">
+                    Réinitialiser la connexion
+                </button>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Fonction pour afficher une notification
+    function showNotification(message, type) {
+        const notification = document.getElementById('notification');
+        notification.textContent = message;
+        notification.className = 'notification ' + type;
+        notification.style.display = 'block';
+        
+        // Masquer la notification après 5 secondes
+        setTimeout(() => {
+            notification.style.display = 'none';
+        }, 5000);
+    }
+    
+    // Variable pour stocker le minuteur et le compte à rebours
+    let authTimer;
+    let countdownInterval;
+    
+    // Fonction pour démarrer l'authentification
+    async function startAuthentication() {
+        try {
+            const response = await fetch('/start_authentication', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'}
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                showNotification(data.message, 'success');
+                location.reload();
+                
+                // Démarrer un minuteur de 30 secondes
+                authTimer = setTimeout(() => {
+                    showNotification('Le délai pour valider sur la Freebox a expiré. Veuillez réessayer.', 'error');
+                    location.reload(); // Recharger la page pour réafficher le bouton
+                }, 30000); // 30 secondes
+            } else {
+                showNotification('Erreur: ' + (data.error || 'Échec du démarrage de l\'authentification'), 'error');
+            }
+        } catch (error) {
+            console.error('Erreur:', error);
+            showNotification('Erreur de connexion à l\'API Freebox', 'error');
+        }
+    }
+    
+    // Fonction pour démarrer le compte à rebours
+    function startCountdown() {
+        let timeLeft = 30;
+        const countdownElement = document.getElementById('countdown');
+        
+        if (countdownElement) {
+            countdownElement.textContent = timeLeft;
+            
+            countdownInterval = setInterval(() => {
+                timeLeft--;
+                countdownElement.textContent = timeLeft;
+                
+                if (timeLeft <= 0) {
+                    clearInterval(countdownInterval);
+                }
+            }, 1000); // Mettre à jour toutes les secondes
+        }
+    }
+    
+    // Annuler le minuteur et le compte à rebours si la page est quittée
+    window.addEventListener('beforeunload', () => {
+        if (authTimer) {
+            clearTimeout(authTimer);
+        }
+        if (countdownInterval) {
+            clearInterval(countdownInterval);
+        }
+    });
+    
+    // Démarrer le compte à rebours si l'état est 'waiting_approval'
+    document.addEventListener('DOMContentLoaded', function() {
+        const authStatus = '{{ credentials.auth_status }}';
+        if (authStatus === 'waiting_approval') {
+            startCountdown();
+        }
+    });
+    
+    // Fonction pour créer une session
+    async function createSession() {
+        try {
+            const response = await fetch('/create_session', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'}
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                showNotification(data.message, 'success');
+                location.reload();
+            } else {
+                showNotification('Erreur: ' + (data.error || 'Échec de la création de session'), 'error');
+            }
+        } catch (error) {
+            console.error('Erreur:', error);
+            showNotification('Erreur de création de session', 'error');
+        }
+    }
+    
+    // Fonction pour vérifier l'état de l'authentification
+    async function checkAuthStatus() {
+        try {
+            const response = await fetch('/check_auth_status');
+            const data = await response.json();
+            
+            if (data.status === 'authorized') {
+                showNotification(data.message, 'success');
+                // La session est en cours de création automatiquement, pas besoin de recharger
+                // location.reload();
+            } else if (data.status === 'waiting_approval') {
+                document.getElementById('status-message').innerHTML = 
+                    '<p>En attente de votre approbation sur la Freebox...</p>';
+            } else if (data.status === 'session_created') {
+                document.getElementById('status-message').innerHTML = 
+                    '<p>Session active. Vous pouvez utiliser l\'application.</p>';
+            } else if (data.status === 'not_started') {
+                // Réinitialiser l'interface si le délai a expiré
+                showNotification(data.message || 'Délai expiré. Veuillez réessayer.', 'error');
+                location.reload();
+            }
+        } catch (error) {
+            console.error('Erreur:', error);
+        }
+    }
+    
+    // Vérifier automatiquement le statut si en attente d'approbation
+    document.addEventListener('DOMContentLoaded', function() {
+        const authStatus = '{{ credentials.auth_status }}';
+        if (authStatus === 'waiting_approval' || authStatus === 'authorized') {
+            setInterval(checkAuthStatus, 5000); // Vérifier toutes les 5 secondes
+        }
+    });
+</script>
+{% endblock %}

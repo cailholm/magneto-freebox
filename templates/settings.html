@@ -1,0 +1,117 @@
+{% extends "base.html" %}
+
+{% block content %}
+<article>
+    <h1>{{ app_name }} - Paramètres</h1>
+</article>
+
+<div class="grid">
+    <div>
+        <div class="card">
+            <h2>Configuration Freebox</h2>
+            
+            <div id="auth-status">
+                {% if credentials.auth_status == 'session_created' %}
+                    <div class="success">
+                        ✅ Session active
+                    </div>
+                {% elif credentials.auth_status == 'authorized' %}
+                    <div class="info">
+                        ⏳ Authentification approuvée, prêt pour la session
+                    </div>
+                {% elif credentials.auth_status == 'waiting_approval' %}
+                    <div class="warning">
+                        ⏳ En attente d'approbation sur la Freebox...
+                    </div>
+                {% else %}
+                    <div class="error">
+                        ❌ Non connecté à l'API Freebox
+                    </div>
+                {% endif %}
+            </div>
+            
+            {% if credentials.auth_status == 'not_started' %}
+                <p>Pour configurer la connexion à la Freebox, veuillez vous rendre sur la page de connexion.</p>
+                <a href="/connection" class="success">Aller à la page de connexion</a>
+            {% endif %}
+            
+            <form method="POST" action="/update_freebox_url">
+                <label for="freeboxUrl">URL de l'API Freebox</label>
+                <input type="text" id="freeboxUrl" name="freeboxUrl" 
+                       value="{{ credentials.api_base_url }}" 
+                       placeholder="http://mafreebox.freebox.fr/api" required>
+                <button type="submit" class="primary">Enregistrer</button>
+            </form>
+            
+
+        </div>
+    </div>
+    
+    <div>
+        <div class="card">
+            <h2>Gestion des chaînes</h2>
+            
+            {% if channels %}
+                <ul>
+                    {% for channel in channels %}
+                        <li>
+                            {{ channel.name }}
+                            <div class="mt-1">
+                                <a href="/toggle_channel/{{ channel.id }}" 
+                                   class="{% if channel.enabled %}outline{% endif %}">
+                                    {{ 'Désactiver' if channel.enabled else 'Activer' }}
+                                </a>
+                            </div>
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <p>Aucune chaîne configurée</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Fonction pour déconnecter
+    async function logout() {
+        try {
+            const response = await fetch('/logout', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'}
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                alert(data.message);
+                location.reload();
+            } else {
+                alert('Erreur: ' + (data.error || 'Échec de la déconnexion'));
+            }
+        } catch (error) {
+            console.error('Erreur:', error);
+            alert('Erreur de déconnexion');
+        }
+    }
+    
+    // Fonction pour basculer l'état d'une chaîne
+    async function toggleChannel(channelId) {
+        try {
+            const response = await fetch(`/toggle_channel/${channelId}`, {
+                method: 'POST'
+            });
+            
+            if (response.ok) {
+                location.reload();
+            }
+        } catch (error) {
+            console.error('Erreur:', error);
+            alert('Erreur de mise à jour de la chaîne');
+        }
+    }
+</script>
+{% endblock %}

@@ -1,0 +1,210 @@
+{% extends "base.html" %}
+
+{% block content %}
+<article>
+    <h1>{{ app_name }}</h1>
+    <p>Gestion des enregistrements de films depuis votre Freebox</p>
+</article>
+
+<div class="grid">
+    <div class="grid-card">
+        <div class="card">
+            <h2>Chaînes surveillées ({{ channels|length }})</h2>
+            {% if channels %}
+                <div class="channels-list">
+                    {% for channel in channels %}
+                    <div class="channel-item">
+                        {% if channel.logo %}
+                            <img src="{{ channel.logo }}" alt="{{ channel.name }}" class="channel-logo-small" onerror="this.style.display='none'">
+                        {% endif %}
+                        <span class="channel-name">{{ channel.name }}</span>
+                    </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <p class="no-channels">Aucune chaîne sélectionnée</p>
+            {% endif %}
+        </div>
+    </div>
+    
+    <div class="grid-card">
+        <div class="card">
+            <h2>Programmations ({{ recordings|length }})</h2>
+            {% if pvr_error %}
+                <div class="pvr-error">
+                    ⚠️ {{ pvr_error }}
+                </div>
+            {% elif recordings %}
+                <div class="recordings-list">
+                    {% for recording in recordings %}
+                    <div class="recording-item">
+                        <div class="recording-info">
+                            <strong>{{ recording.title }}</strong>
+                            <div class="recording-meta">
+                                <span class="recording-channel">{{ recording.channel }}</span>
+                                <span class="recording-time">{{ recording.start_time }} - {{ recording.end_time }}</span>
+                            </div>
+                        </div>
+                        <div class="recording-status {{ recording.status }}">
+                            {{ recording.status }}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <p class="no-recordings">Aucune programmation en cours</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+<style>
+.grid-card {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.grid-card .card {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.channels-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    flex: 1;
+}
+
+.channel-item {
+    display: flex;
+    align-items: center;
+    padding: 8px;
+    background: #f8f9fa;
+    border-radius: 6px;
+    transition: background 0.2s;
+}
+
+.channel-item:hover {
+    background: #e9ecef;
+}
+
+.channel-logo-small {
+    width: 24px;
+    height: 24px;
+    object-fit: contain;
+    border-radius: 4px;
+    margin-right: 12px;
+    flex-shrink: 0;
+    background-color: rgb(255, 193, 7);
+    padding: 2px;
+}
+
+.channel-name {
+    font-size: 14px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.no-channels {
+    color: #6c757d;
+    font-style: italic;
+    text-align: center;
+    padding: 20px 0;
+}
+
+/* Styles pour les programmations */
+.recordings-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    flex: 1;
+}
+
+.recording-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px;
+    background: #f8f9fa;
+    border-radius: 6px;
+    transition: all 0.2s;
+}
+
+.recording-item:hover {
+    background: #e9ecef;
+    transform: translateY(-1px);
+}
+
+.recording-info {
+    flex: 1;
+}
+
+.recording-info strong {
+    display: block;
+    margin-bottom: 4px;
+    font-size: 14px;
+}
+
+.recording-meta {
+    font-size: 12px;
+    color: #6c757d;
+}
+
+.recording-channel {
+    margin-right: 8px;
+    font-weight: 500;
+}
+
+.recording-time {
+    color: #495057;
+}
+
+.recording-status {
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: bold;
+    text-transform: lowercase;
+}
+
+.recording-status.scheduled {
+    background: #fff3cd;
+    color: #856404;
+}
+
+.recording-status.recording {
+    background: #d1ecf1;
+    color: #0c5460;
+}
+
+.recording-status.completed {
+    background: #d4edda;
+    color: #155724;
+}
+
+.recording-status.failed {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+.no-recordings {
+    color: #6c757d;
+    font-style: italic;
+    text-align: center;
+    padding: 20px 0;
+}
+
+.pvr-error {
+    background: #fff3cd;
+    color: #856404;
+    padding: 12px;
+    border-radius: 6px;
+    margin-bottom: 12px;
+    text-align: center;
+    font-size: 14px;
+}
+</style>
+{% endblock %}

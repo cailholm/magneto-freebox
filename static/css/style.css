@@ -1,0 +1,104 @@
+:root {
+    --primary: #2563eb;
+    --primary-hover: #1d4ed8;
+}
+
+/* Style pour les badges */
+.badge {
+    display: inline-block;
+    padding: 0.25em 0.5em;
+    font-size: 0.85em;
+    border-radius: 0.25rem;
+    font-weight: bold;
+}
+
+.secondary.badge {
+    background-color: var(--primary);
+    color: white;
+}
+
+/* Espacement des éléments */
+.grid > div {
+    margin-bottom: 1rem;
+}
+
+/* Style pour les cartes */
+.card {
+    border: 1px solid #e5e7eb;
+    border-radius: 0.5rem;
+    padding: 1.5rem;
+    margin-bottom: 1rem;
+}
+
+/* Couleurs pour les messages */
+.success {
+    color: #166534;
+    background-color: #d1fae5;
+    padding: 0.75rem;
+    border-radius: 0.375rem;
+    margin-bottom: 1rem;
+}
+
+.info {
+    color: #1e40af;
+    background-color: #dbeafe;
+    padding: 0.75rem;
+    border-radius: 0.375rem;
+    margin-bottom: 1rem;
+}
+
+.warning {
+    color: #92400e;
+    background-color: #fef3c7;
+    padding: 0.75rem;
+    border-radius: 0.375rem;
+    margin-bottom: 1rem;
+}
+
+.error {
+    color: #991b1b;
+    background-color: #fee2e2;
+    padding: 0.75rem;
+    border-radius: 0.375rem;
+    margin-bottom: 1rem;
+}
+
+/* Style pour les liens boutons */
+[role="button"] {
+    display: inline-block;
+    padding: 0.5rem 1rem;
+    margin-right: 0.5rem;
+    cursor: pointer;
+    text-decoration: none;
+    border-radius: 0.25rem;
+}
+
+.primary[role="button"] {
+    background-color: var(--primary);
+    color: white;
+    border: 1px solid var(--primary);
+}
+
+.primary[role="button"]:hover {
+    background-color: var(--primary-hover);
+}
+
+.outline[role="button"] {
+    background-color: transparent;
+    color: var(--primary);
+    border: 1px solid var(--primary);
+}
+
+.outline[role="button"]:hover {
+    background-color: rgba(37, 99, 235, 0.1);
+}
+
+.success[role="button"] {
+    background-color: #166534;
+    color: white;
+    border: 1px solid #166534;
+}
+
+.success[role="button"]:hover {
+    background-color: #15803d;
+}
